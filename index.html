@@ -12,89 +12,296 @@
 
   <style>
     :root {
-      --crimson:     #c0162c;
-      --crimson-dark:#8b0000;
-      --bg:          #0d0507;
-      --bg-card:     #150b0d;
-      --bg-muted:    #1a0f11;
-      --border:      #3a1a1e;
-      --text:        #e8d8db;
-      --text-muted:  #9a7a7f;
-      --nav-height:  64px;
+      --crimson:      #c0162c;
+      --crimson-dark: #8b0000;
+      --crimson-glow: rgba(192, 22, 44, 0.6);
+      --bg:           #0d0507;
+      --bg-card:      #150b0d;
+      --bg-muted:     #1a0f11;
+      --border:       #3a1a1e;
+      --text:         #e8d8db;
+      --text-muted:   #9a7a7f;
+      --nav-height:   64px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Raleway', sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.7; }
+    body { font-family: 'Raleway', sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.7; overflow-x: hidden; }
     h1, h2, h3, h4, h5 { font-family: 'Raleway', sans-serif; font-weight: 700; }
     a { color: var(--crimson); text-decoration: none; }
     a:hover { color: #e84060; }
     img { display: block; max-width: 100%; }
 
-    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; height: var(--nav-height); background: rgba(13, 5, 7, 0.97); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; justify-content: space-between; }
-    .nav-brand { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.2em; color: var(--crimson); text-transform: uppercase; }
+    /* ===== SCROLL PROGRESS BAR ===== */
+    #progress-bar {
+      position: fixed; top: var(--nav-height); left: 0;
+      height: 2px; width: 0%;
+      background: linear-gradient(90deg, var(--crimson-dark), var(--crimson), #ff4060);
+      z-index: 9999; box-shadow: 0 0 8px var(--crimson-glow);
+      transition: width 0.1s linear;
+    }
+
+    /* ===== CURSOR GLOW ===== */
+    #cursor-glow {
+      position: fixed; width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(192,22,44,0.07) 0%, transparent 70%);
+      pointer-events: none; transform: translate(-50%, -50%); z-index: 0;
+    }
+
+    /* ===== PARTICLES ===== */
+    #particles-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0; opacity: 0.5;
+    }
+
+    /* ===== NAV ===== */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: var(--nav-height); background: rgba(13, 5, 7, 0.97);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 24px; justify-content: space-between;
+      animation: slideDown 0.7s ease both;
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+    .nav-brand {
+      font-weight: 800; font-size: 1.1rem; letter-spacing: 0.2em;
+      color: var(--crimson); text-transform: uppercase; position: relative;
+    }
+    .nav-brand::after {
+      content: ''; position: absolute; bottom: -2px; left: 0;
+      width: 0; height: 2px; background: var(--crimson); transition: width 0.3s ease;
+    }
+    .nav-brand:hover::after { width: 100%; }
     .nav-links { display: flex; gap: 28px; list-style: none; }
-    .nav-links a { color: var(--text); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; transition: color 0.2s; }
+    .nav-links a {
+      color: var(--text); font-size: 0.78rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase; transition: color 0.2s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -3px; left: 0;
+      width: 0; height: 1px; background: var(--crimson); transition: width 0.3s ease;
+    }
     .nav-links a:hover { color: var(--crimson); }
+    .nav-links a:hover::after { width: 100%; }
     .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
-    .hamburger span { display: block; width: 24px; height: 2px; background: var(--text); }
-    .mobile-menu { display: none; position: fixed; top: var(--nav-height); left: 0; right: 0; background: var(--bg-card); border-bottom: 1px solid var(--border); z-index: 999; padding: 16px 24px; flex-direction: column; gap: 16px; }
+    .hamburger span { display: block; width: 24px; height: 2px; background: var(--text); transition: all 0.3s ease; }
+    .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+    .mobile-menu {
+      display: none; position: fixed; top: var(--nav-height); left: 0; right: 0;
+      background: var(--bg-card); border-bottom: 1px solid var(--border);
+      z-index: 999; padding: 16px 24px; flex-direction: column; gap: 16px;
+    }
     .mobile-menu.open { display: flex; }
     .mobile-menu a { color: var(--text); font-size: 0.9rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid var(--border); }
 
-    header { padding: calc(var(--nav-height) + 56px) 24px 56px; text-align: center; border-bottom: 1px solid var(--border); }
-    header h1 { font-size: clamp(2.4rem, 6vw, 5rem); font-family: 'Cinzel Decorative', serif; letter-spacing: 0.12em; color: var(--text); line-height: 1.1; margin-bottom: 16px; text-shadow: 0 0 40px rgba(192, 22, 44, 0.4); }
-    header p { font-size: clamp(0.85rem, 2vw, 1.2rem); letter-spacing: 0.3em; text-transform: uppercase; color: var(--text-muted); font-weight: 400; }
-    header p span { color: var(--crimson); font-weight: 700; }
+    /* ===== HEADER ===== */
+    header {
+      padding: calc(var(--nav-height) + 56px) 24px 56px;
+      text-align: center; border-bottom: 1px solid var(--border);
+      position: relative; overflow: hidden;
+      min-height: 360px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    }
 
-    .w3-content { max-width: 1300px; margin: 0 auto; padding: 0 16px; }
+    /* Wanda Crown SVG background */
+    #wanda-crown-bg {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(520px, 90vw);
+      height: auto;
+      opacity: 0;
+      pointer-events: none;
+      animation: crownFadeIn 2s ease 0.5s forwards;
+    }
+    @keyframes crownFadeIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    /* Crown pulse glow */
+    #wanda-crown-bg .crown-stroke {
+      animation: crownPulse 3.5s ease-in-out infinite;
+    }
+    @keyframes crownPulse {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(192,22,44,0.5)); opacity: 0.18; }
+      50%       { filter: drop-shadow(0 0 22px rgba(192,22,44,0.9)); opacity: 0.32; }
+    }
+
+    /* Slow rotation for the outer ring */
+    #crown-ring {
+      transform-origin: center;
+      animation: ringRotate 40s linear infinite;
+    }
+    @keyframes ringRotate {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    header h1 {
+      font-size: clamp(2.4rem, 6vw, 5rem); font-family: 'Cinzel Decorative', serif;
+      letter-spacing: 0.12em; color: var(--text); line-height: 1.1; margin-bottom: 16px;
+      text-shadow: 0 0 60px rgba(192, 22, 44, 0.6), 0 0 120px rgba(192, 22, 44, 0.2);
+      animation: titleGlow 0.9s ease both, titleFloat 4s ease-in-out 1s infinite;
+      opacity: 0; position: relative; z-index: 2;
+    }
+    @keyframes titleGlow {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes titleFloat {
+      0%, 100% { text-shadow: 0 0 60px rgba(192,22,44,0.6), 0 0 120px rgba(192,22,44,0.2); }
+      50%       { text-shadow: 0 0 80px rgba(192,22,44,0.9), 0 0 160px rgba(192,22,44,0.4); }
+    }
+    header p {
+      font-size: clamp(0.85rem, 2vw, 1.2rem); letter-spacing: 0.3em;
+      text-transform: uppercase; color: var(--text-muted); font-weight: 400;
+      animation: fadeInUp 1s ease 0.4s both; position: relative; z-index: 2;
+    }
+    header p span { color: var(--crimson); font-weight: 700; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== LAYOUT ===== */
+    .w3-content { max-width: 1300px; margin: 0 auto; padding: 0 16px; position: relative; z-index: 1; }
     .grid-wrapper { display: grid; grid-template-columns: 1fr 380px; gap: 32px; padding: 40px 0 60px; }
 
+    /* ===== BLOG CARDS ===== */
     .blog-col { display: flex; flex-direction: column; gap: 40px; }
-    .blog-card { background: var(--bg-card); border: 1px solid var(--border); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.5); transition: box-shadow 0.3s; }
-    .blog-card:hover { box-shadow: 0 4px 24px rgba(192, 22, 44, 0.15); }
-    .blog-card img { width: 100%; height: 380px; object-fit: cover; border-bottom: 1px solid var(--border); filter: brightness(0.9); transition: filter 0.3s; }
-    .blog-card:hover img { filter: brightness(1); }
+    .blog-card {
+      background: var(--bg-card); border: 1px solid var(--border); overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+      transition: box-shadow 0.4s ease, transform 0.4s ease, border-color 0.4s ease;
+      opacity: 0; transform: translateY(40px);
+    }
+    .blog-card.visible { animation: cardReveal 0.7s ease forwards; }
+    @keyframes cardReveal { to { opacity: 1; transform: translateY(0); } }
+    .blog-card:hover {
+      box-shadow: 0 8px 40px rgba(192, 22, 44, 0.25), 0 0 0 1px var(--crimson);
+      transform: translateY(-4px); border-color: var(--crimson);
+    }
+    .blog-card .img-wrap { overflow: hidden; position: relative; }
+    .blog-card .img-wrap::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, rgba(192,22,44,0.15) 0%, transparent 70%);
+      opacity: 0; transition: opacity 0.4s ease;
+    }
+    .blog-card:hover .img-wrap::after { opacity: 1; }
+    .blog-card img {
+      width: 100%; height: 380px; object-fit: cover;
+      border-bottom: 1px solid var(--border);
+      filter: brightness(0.9); transition: filter 0.5s ease, transform 0.5s ease;
+    }
+    .blog-card:hover img { filter: brightness(1.05); transform: scale(1.03); }
     .blog-card-body { padding: 28px 32px 32px; }
-    .blog-card-body h3 { font-size: 1.6rem; color: var(--text); margin-bottom: 6px; }
+    .blog-card-body h3 { font-size: 1.6rem; color: var(--text); margin-bottom: 6px; transition: color 0.3s; }
+    .blog-card:hover .blog-card-body h3 { color: #fff; }
     .blog-card-body h5 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--crimson); font-weight: 600; margin-bottom: 18px; }
     .blog-card-body p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-bottom: 24px; }
     .blog-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    .btn-read-more { display: inline-block; padding: 10px 24px; border: 1px solid var(--crimson); color: var(--crimson); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; background: transparent; cursor: pointer; transition: background 0.25s, color 0.25s; font-family: 'Raleway', sans-serif; }
-    .btn-read-more:hover { background: var(--crimson); color: #fff; }
+    .btn-read-more {
+      display: inline-block; padding: 10px 24px;
+      border: 1px solid var(--crimson); color: var(--crimson);
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+      background: transparent; cursor: pointer;
+      transition: color 0.25s, box-shadow 0.25s, transform 0.2s;
+      font-family: 'Raleway', sans-serif; position: relative; overflow: hidden;
+    }
+    .btn-read-more::before {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 200%; padding-top: 200%; background: var(--crimson);
+      border-radius: 50%; transition: transform 0.5s ease; z-index: 0;
+    }
+    .btn-read-more:hover::before { transform: translate(-50%, -50%) scale(1); }
+    .btn-read-more:hover { color: #fff; box-shadow: 0 0 20px var(--crimson-glow); transform: scale(1.04); }
     .blog-comments { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; }
-    .badge { display: inline-block; background: var(--crimson); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 2px; margin-left: 6px; }
+    .badge {
+      display: inline-block; background: var(--crimson); color: #fff;
+      font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 2px; margin-left: 6px;
+      animation: pulseBadge 2.5s ease-in-out infinite;
+    }
+    @keyframes pulseBadge {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(192,22,44,0.5); }
+      50%       { box-shadow: 0 0 0 6px rgba(192,22,44,0); }
+    }
 
+    /* ===== SIDEBAR ===== */
     .sidebar { display: flex; flex-direction: column; gap: 28px; }
-    .sidebar-card { background: var(--bg-card); border: 1px solid var(--border); overflow: hidden; }
-    .sidebar-card img { width: 100%; height: 240px; object-fit: cover; object-position: top; border-bottom: 1px solid var(--border); }
+    .sidebar-card {
+      background: var(--bg-card); border: 1px solid var(--border); overflow: hidden;
+      transition: border-color 0.3s; opacity: 0; transform: translateX(30px);
+    }
+    .sidebar-card.visible { animation: sideReveal 0.7s ease forwards; }
+    @keyframes sideReveal { to { opacity: 1; transform: translateX(0); } }
+    .sidebar-card:hover { border-color: rgba(192,22,44,0.4); }
+    .sidebar-card .img-wrap { overflow: hidden; }
+    .sidebar-card img {
+      width: 100%; height: 240px; object-fit: cover; object-position: top;
+      border-bottom: 1px solid var(--border); transition: filter 0.3s, transform 0.4s;
+    }
+    .sidebar-card:hover img { filter: brightness(1.05); transform: scale(1.02); }
     .sidebar-card-body { padding: 20px; }
     .sidebar-card-body h4 { font-size: 1.1rem; color: var(--text); margin-bottom: 10px; }
     .sidebar-card-body p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.75; }
     .sidebar-section-title { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--bg-muted); }
     .sidebar-section-title h4 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text); margin: 0; }
     .posts-list { list-style: none; }
-    .posts-list li { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background 0.2s; cursor: pointer; }
+    .posts-list li {
+      display: flex; align-items: center; gap: 14px; padding: 14px 20px;
+      border-bottom: 1px solid var(--border); transition: background 0.2s, padding-left 0.2s; cursor: pointer;
+    }
     .posts-list li:last-child { border-bottom: none; }
-    .posts-list li:hover { background: rgba(192, 22, 44, 0.07); }
-    .posts-list li img { width: 52px; height: 52px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+    .posts-list li:hover { background: rgba(192, 22, 44, 0.07); padding-left: 26px; }
+    .posts-list li img {
+      width: 52px; height: 52px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .posts-list li:hover img { border-color: var(--crimson); transform: scale(1.08); }
     .post-title { font-size: 0.9rem; font-weight: 600; color: var(--text); display: block; }
     .post-sub { font-size: 0.78rem; color: var(--text-muted); display: block; }
     .tags-container { padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 8px; }
-    .tag { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; padding: 5px 12px; border: 1px solid var(--border); color: var(--text-muted); background: var(--bg-muted); cursor: pointer; transition: all 0.2s; font-weight: 600; }
-    .tag:hover, .tag.active { background: var(--crimson); color: #fff; border-color: var(--crimson); }
+    .tag {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+      padding: 5px 12px; border: 1px solid var(--border); color: var(--text-muted);
+      background: var(--bg-muted); cursor: pointer; transition: all 0.25s ease; font-weight: 600;
+    }
+    .tag:hover, .tag.active {
+      background: var(--crimson); color: #fff; border-color: var(--crimson);
+      box-shadow: 0 0 12px rgba(192,22,44,0.4); transform: translateY(-2px);
+    }
 
-    footer { background: var(--bg-muted); border-top: 1px solid var(--border); padding: 40px 24px; margin-top: 24px; }
+    /* ===== FOOTER ===== */
+    footer { background: var(--bg-muted); border-top: 1px solid var(--border); padding: 40px 24px; margin-top: 24px; position: relative; z-index: 1; }
     .footer-inner { max-width: 1300px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
     .footer-btns { display: flex; gap: 12px; }
-    .btn-footer { padding: 10px 24px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-family: 'Raleway', sans-serif; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); transition: all 0.25s; }
-    .btn-footer:hover { background: var(--crimson); color: #fff; border-color: var(--crimson); }
+    .btn-footer {
+      padding: 10px 24px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; font-family: 'Raleway', sans-serif; cursor: pointer;
+      border: 1px solid var(--border); background: var(--bg-card); color: var(--text); transition: all 0.25s;
+    }
+    .btn-footer:hover { background: var(--crimson); color: #fff; border-color: var(--crimson); box-shadow: 0 0 16px rgba(192,22,44,0.4); }
     .btn-footer.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
     .footer-credit { font-size: 0.82rem; color: var(--text-muted); }
 
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--crimson-dark); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--crimson); }
+
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 900px) { .grid-wrapper { grid-template-columns: 1fr; } }
     @media (max-width: 600px) {
       .nav-links { display: none; }
       .hamburger { display: flex; }
       header h1 { font-size: 2rem; }
+      #wanda-crown-bg { width: min(340px, 92vw); }
       .blog-card img { height: 220px; }
       .blog-card-body { padding: 20px; }
       .blog-card-body h3 { font-size: 1.2rem; }
@@ -103,6 +310,10 @@
   </style>
 </head>
 <body>
+
+  <div id="progress-bar"></div>
+  <div id="cursor-glow"></div>
+  <canvas id="particles-canvas"></canvas>
 
   <nav>
     <a href="#inicio" class="nav-brand">BRUJA ESCARLATA</a>
@@ -113,7 +324,7 @@
       <li><a href="#apariciones">Appearances</a></li>
       <li><a href="#galeria">Gallery</a></li>
     </ul>
-    <button class="hamburger" onclick="toggleMenu()">
+    <button class="hamburger" id="hamburgerBtn" onclick="toggleMenu()">
       <span></span><span></span><span></span>
     </button>
   </nav>
@@ -127,6 +338,91 @@
   </div>
 
   <header id="inicio">
+
+    <!-- WANDA CROWN / SYMBOL — fondo animado -->
+    <svg id="wanda-crown-bg" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <filter id="crownGlow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+      </defs>
+
+      <!-- Outer decorative ring (slow rotation) -->
+      <g id="crown-ring" style="transform-box: fill-box; transform-origin: 50% 50%;">
+        <circle cx="200" cy="160" r="148" fill="none" stroke="rgba(192,22,44,0.18)" stroke-width="1" stroke-dasharray="6 10"/>
+        <circle cx="200" cy="160" r="144" fill="none" stroke="rgba(192,22,44,0.08)" stroke-width="0.5"/>
+        <!-- Small diamond ornaments on ring -->
+        <polygon points="200,10 204,16 200,22 196,16" fill="rgba(192,22,44,0.4)"/>
+        <polygon points="200,298 204,304 200,310 196,304" fill="rgba(192,22,44,0.4)"/>
+        <polygon points="50,160 56,156 62,160 56,164" fill="rgba(192,22,44,0.4)"/>
+        <polygon points="338,160 344,156 350,160 344,164" fill="rgba(192,22,44,0.4)"/>
+      </g>
+
+      <!-- Inner glow ring -->
+      <circle cx="200" cy="160" r="120" fill="none" stroke="rgba(192,22,44,0.1)" stroke-width="0.5" class="crown-stroke"/>
+
+      <!-- === WANDA CROWN / TIARA === -->
+      <!-- Base band of the crown -->
+      <path class="crown-stroke"
+        d="M 80 210 Q 200 205 320 210"
+        fill="none" stroke="rgba(192,22,44,0.55)" stroke-width="2.5" stroke-linecap="round"/>
+
+      <!-- Left side band -->
+      <path class="crown-stroke"
+        d="M 80 210 Q 78 195 85 188"
+        fill="none" stroke="rgba(192,22,44,0.45)" stroke-width="2" stroke-linecap="round"/>
+
+      <!-- Right side band -->
+      <path class="crown-stroke"
+        d="M 320 210 Q 322 195 315 188"
+        fill="none" stroke="rgba(192,22,44,0.45)" stroke-width="2" stroke-linecap="round"/>
+
+      <!-- Left large spike -->
+      <path class="crown-stroke"
+        d="M 85 188 L 108 138 L 128 178"
+        fill="none" stroke="rgba(192,22,44,0.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Left medium spike -->
+      <path class="crown-stroke"
+        d="M 128 178 L 145 148 L 162 178"
+        fill="none" stroke="rgba(192,22,44,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- CENTER tall spike (the iconic Wanda spike) -->
+      <path class="crown-stroke"
+        d="M 162 178 L 175 165 L 185 100 L 200 72 L 215 100 L 225 165 L 238 178"
+        fill="none" stroke="rgba(192,22,44,0.75)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Right medium spike -->
+      <path class="crown-stroke"
+        d="M 238 178 L 255 148 L 272 178"
+        fill="none" stroke="rgba(192,22,44,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Right large spike -->
+      <path class="crown-stroke"
+        d="M 272 178 L 292 138 L 315 188"
+        fill="none" stroke="rgba(192,22,44,0.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Gem/jewel at crown center tip -->
+      <ellipse cx="200" cy="70" rx="7" ry="9" fill="rgba(192,22,44,0.25)" stroke="rgba(192,22,44,0.7)" stroke-width="1.2" class="crown-stroke"/>
+      <ellipse cx="200" cy="70" rx="3.5" ry="4.5" fill="rgba(192,22,44,0.5)" class="crown-stroke"/>
+
+      <!-- Small accent gems on side spikes -->
+      <circle cx="108" cy="136" r="3.5" fill="rgba(192,22,44,0.2)" stroke="rgba(192,22,44,0.55)" stroke-width="1" class="crown-stroke"/>
+      <circle cx="292" cy="136" r="3.5" fill="rgba(192,22,44,0.2)" stroke="rgba(192,22,44,0.55)" stroke-width="1" class="crown-stroke"/>
+      <circle cx="145" cy="146" r="2.5" fill="rgba(192,22,44,0.2)" stroke="rgba(192,22,44,0.45)" stroke-width="1" class="crown-stroke"/>
+      <circle cx="255" cy="146" r="2.5" fill="rgba(192,22,44,0.2)" stroke="rgba(192,22,44,0.45)" stroke-width="1" class="crown-stroke"/>
+
+      <!-- Decorative horizontal line under crown -->
+      <line x1="90" y1="214" x2="310" y2="214" stroke="rgba(192,22,44,0.3)" stroke-width="0.8" class="crown-stroke"/>
+      <line x1="110" y1="219" x2="290" y2="219" stroke="rgba(192,22,44,0.15)" stroke-width="0.5"/>
+
+      <!-- W symbol subtle watermark below crown -->
+      <path
+        d="M 158 240 L 168 270 L 180 250 L 192 270 L 200 255 L 208 270 L 220 250 L 232 270 L 242 240"
+        fill="none" stroke="rgba(192,22,44,0.2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
     <h1>WANDA MAXIMOFF "By VMBM"</h1>
     <p>The <span>Scarlet Witch</span> Chronicles</p>
   </header>
@@ -137,7 +433,7 @@
       <div class="blog-col">
 
         <article class="blog-card" id="sobre">
-          <img src="caos magico.png" alt="Wanda Maximoff">
+          <div class="img-wrap"><img src="caos magico.png" alt="Wanda Maximoff"></div>
           <div class="blog-card-body">
             <h3>Origins: The Scarlet Witch</h3>
             <h5>Sokovia, 1989</h5>
@@ -150,7 +446,7 @@
         </article>
 
         <article class="blog-card" id="poderes">
-          <img src="poder del caos.png" alt="Chaos Magic">
+          <div class="img-wrap"><img src="poder del caos.png" alt="Chaos Magic"></div>
           <div class="blog-card-body">
             <h3>Chaos Magic: An Unlimited Power</h3>
             <h5>The Power of the Witch</h5>
@@ -163,7 +459,7 @@
         </article>
 
         <article class="blog-card">
-          <img src="wandavision a new reality.png" alt="WandaVision">
+          <div class="img-wrap"><img src="wandavision a new reality.png" alt="WandaVision"></div>
           <div class="blog-card-body">
             <h3>WandaVision: A New Reality</h3>
             <h5>Westview, 2023</h5>
@@ -176,7 +472,7 @@
         </article>
 
         <article class="blog-card" id="apariciones">
-          <img src="doctor_strange.jpg" alt="Doctor Strange">
+          <div class="img-wrap"><img src="doctor_strange.jpg" alt="Doctor Strange"></div>
           <div class="blog-card-body">
             <h3>Doctor Strange & the Multiverse</h3>
             <h5>The Dark Hold</h5>
@@ -189,7 +485,7 @@
         </article>
 
         <article class="blog-card" id="galeria">
-          <img src="galeria magica.png" alt="The Avengers">
+          <div class="img-wrap"><img src="galeria magica.png" alt="The Avengers"></div>
           <div class="blog-card-body">
             <h3>The Avengers: Earth's Mightiest</h3>
             <h5>Age of Ultron</h5>
@@ -206,7 +502,7 @@
       <aside class="sidebar">
 
         <div class="sidebar-card">
-          <img src="wanda_wallawar.jpg" alt="Wanda Maximoff">
+          <div class="img-wrap"><img src="wanda_wallawar.jpg" alt="Wanda Maximoff"></div>
           <div class="sidebar-card-body">
             <h4><b>Wanda Maximoff</b></h4>
             <p>Nacida en Sokovia, hija de Iryna y Oleg Maximoff, Wanda y su hermano gemelo Pietro fueron expuestos a un programa experimental de HYDRA mediante la Gema de la Mente. Esta experiencia traumática desbloqueó sus poderes mutantes latentes, otorgándole la capacidad de manipular la magia del caos y alterar la realidad misma.</p>
@@ -268,13 +564,100 @@
   </footer>
 
   <script>
-    function toggleMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
-    function closeMenu() { document.getElementById('mobileMenu').classList.remove('open'); }
+    /* NAV */
+    function toggleMenu() {
+      document.getElementById('mobileMenu').classList.toggle('open');
+      document.getElementById('hamburgerBtn').classList.toggle('open');
+    }
+    function closeMenu() {
+      document.getElementById('mobileMenu').classList.remove('open');
+      document.getElementById('hamburgerBtn').classList.remove('open');
+    }
     document.querySelectorAll('a[href^="#"]').forEach(link => {
       link.addEventListener('click', function(e) {
         const target = document.querySelector(this.getAttribute('href'));
         if (target) { e.preventDefault(); window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' }); }
       });
+    });
+
+    /* SCROLL PROGRESS BAR */
+    const progressBar = document.getElementById('progress-bar');
+    window.addEventListener('scroll', () => {
+      const pct = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+      progressBar.style.width = pct + '%';
+    });
+
+    /* CURSOR GLOW */
+    const glow = document.getElementById('cursor-glow');
+    document.addEventListener('mousemove', e => {
+      glow.style.left = e.clientX + 'px';
+      glow.style.top  = e.clientY + 'px';
+    });
+
+    /* SCROLL REVEAL */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const delay = entry.target.dataset.delay || 0;
+          setTimeout(() => entry.target.classList.add('visible'), delay);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.blog-card').forEach((el, i) => {
+      el.dataset.delay = i * 80;
+      observer.observe(el);
+    });
+    document.querySelectorAll('.sidebar-card').forEach((el, i) => {
+      el.dataset.delay = i * 120;
+      observer.observe(el);
+    });
+
+    /* PARTICLES */
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const particles = [];
+    class Particle {
+      constructor() { this.reset(true); }
+      reset(initial) {
+        this.x       = Math.random() * canvas.width;
+        this.y       = initial ? Math.random() * canvas.height : canvas.height + 10;
+        this.size    = Math.random() * 2.5 + 0.5;
+        this.speed   = Math.random() * 0.5 + 0.2;
+        this.opacity = Math.random() * 0.6 + 0.1;
+        this.drift   = (Math.random() - 0.5) * 0.4;
+        this.color   = Math.random() < 0.6
+          ? `rgba(192,22,44,${this.opacity})`
+          : `rgba(232,216,219,${this.opacity * 0.4})`;
+      }
+      update() {
+        this.y -= this.speed;
+        this.x += this.drift;
+        if (this.y < -10) this.reset(false);
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+      }
+    }
+    for (let i = 0; i < 55; i++) particles.push(new Particle());
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    /* TAG TOGGLE */
+    document.querySelectorAll('.tag').forEach(tag => {
+      tag.addEventListener('click', () => tag.classList.toggle('active'));
     });
   </script>
 </body>
